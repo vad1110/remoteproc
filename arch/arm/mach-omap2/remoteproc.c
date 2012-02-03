@@ -23,6 +23,7 @@
 
 #include <plat/omap_device.h>
 #include <plat/omap_hwmod.h>
+#include <plat/omap-pm.h>
 #include <plat/remoteproc.h>
 #include <plat/iommu.h>
 
@@ -40,6 +41,23 @@
  */
 #define OMAP_RPROC_CMA_BASE	(0xa9800000)
 
+static int
+ducati_rproc_set_bandwidth(struct device *dev, struct rproc *rproc, long val)
+{
+	return omap_pm_set_min_bus_tput(rproc->dev, OCP_INITIATOR_AGENT, val);
+}
+
+static int
+ducati_rproc_set_frequency(struct device *dev, struct rproc *rproc, long val)
+{
+	return 0;
+}
+
+static struct rproc_ops ducati_rproc_ops = {
+	.set_bandwidth	= ducati_rproc_set_bandwidth,
+	.set_frequency	= ducati_rproc_set_frequency,
+};
+
 /*
  * These data structures define platform-specific information
  * needed for each supported remote processor.
@@ -56,6 +74,7 @@ static struct omap_rproc_pdata omap4_rproc_data[] = {
 		.oh_name	= "ipu_c0",
 		.idle_addr	= OMAP4430_CM_M3_M3_CLKCTRL,
 		.idle_mask	= OMAP4430_STBYST_MASK,
+		.ops		= &ducati_rproc_ops,
 	},
 };
 
