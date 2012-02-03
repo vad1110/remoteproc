@@ -41,6 +41,7 @@
 #include <linux/mutex.h>
 #include <linux/virtio.h>
 #include <linux/completion.h>
+#include <linux/pm_qos.h>
 
 /*
  * The alignment between the consumer and producer parts of the vring.
@@ -147,11 +148,16 @@ struct rproc;
 
 /**
  * struct rproc_ops - platform-specific device handlers
- * @start:	power on the device and boot it
- * @stop:	power off the device
- * @kick:	kick a virtqueue (virtqueue id given as a parameter)
- * @suspend	suspend callback (suspend set to true if system suspend)
- * @resume	resume callback
+ * @start:		power on the device and boot it
+ * @stop:		power off the device
+ * @kick:		kick a virtqueue (virtqueue id given
+ *			as a parameter)
+ * @suspend		suspend callback (suspend set to true
+ *			if system suspend)
+ * @resume		resume callback
+ * @set_latency		set latency on remote processor
+ * @set_bandwidth	set bandwidth on remote processor
+ * @set_frequency	set frequency of remote processor
  */
 struct rproc_ops {
 	int (*start)(struct rproc *rproc);
@@ -159,6 +165,22 @@ struct rproc_ops {
 	void (*kick)(struct rproc *rproc, int vqid);
 	int (*suspend)(struct rproc *rproc, bool suspend);
 	int (*resume)(struct rproc *rproc);
+	int (*set_latency)(struct device *dev, struct rproc *rproc, long v);
+	int (*set_bandwidth)(struct device *dev, struct rproc *rproc, long v);
+	int (*set_frequency)(struct device *dev, struct rproc *rproc, long v);
+};
+
+/**
+ * enum rproc_constrants - remote processor available constraints
+ * @RPROC_CONSTRAINT_LATENCY:	set latency on remote processor
+ * @RPROC_CONSTRAINT_BANDWIDTH:	set bandwidth on remote processor
+ * @RPROC_CONSTRAINT_FREQUENCY: set frequency of remote processor
+ *
+ */
+enum rproc_constraint {
+	RPROC_CONSTRAINT_LATENCY,
+	RPROC_CONSTRAINT_BANDWIDTH,
+	RPROC_CONSTRAINT_FREQUENCY,
 };
 
 /**
@@ -232,6 +254,7 @@ struct rproc {
 	struct mutex pm_lock;
 	struct completion pm_comp;
 	bool suspended;
+	struct pm_qos_request *qos_request;
 };
 
 /**
@@ -265,6 +288,8 @@ int rproc_unregister(struct rproc *rproc);
 
 int rproc_boot(struct rproc *rproc);
 void rproc_shutdown(struct rproc *rproc);
+int rproc_set_constraints(struct device *dev, struct rproc *rproc,
+				enum rproc_constraint type, long v);
 
 static inline struct rproc *vdev_to_rproc(struct virtio_device *vdev)
 {
