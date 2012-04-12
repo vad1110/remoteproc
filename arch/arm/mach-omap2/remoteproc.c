@@ -52,6 +52,10 @@ static struct rproc_ops ducati_ops = {
 	.set_frequency	= _ducati_set_frequency,
 };
 
+static struct omap_rproc_timers_info ipu_timers[] = {
+	{ .id = 3 },
+};
+
 /*
  * These data structures define platform-specific information
  * needed for each supported remote processor.
@@ -67,6 +71,8 @@ static struct omap_rproc_pdata omap4_rproc_data[] = {
 		.mbox_name	= "mailbox-1",
 		.oh_name	= "ipu_c0",
 		.ops		= &ducati_ops,
+		.timers         = ipu_timers,
+		.timers_cnt     = ARRAY_SIZE(ipu_timers),
 	},
 };
 
